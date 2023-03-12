@@ -2,7 +2,18 @@
 
 Client made with PySimpleGUI and openai API
 
-Additional features should be easy if you can pick through the gui code
+## Features
+
+Set How Many Messages Are Remembered
+
+Set Instructor(Chat, Business , Teacher)
+
+Append A Message(***Unimplimented***)
+
+Set Theme
+
+
+![Preview](ChatClientPreview.png)
 
 ### TODO
 Fix Append Line Function
