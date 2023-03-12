@@ -3,7 +3,7 @@ import PySimpleGUI as sg
 import json
 
 ####
-openai.api_key = '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'
+openai.api_key = '~Your API Key~'
 ####
 
 
