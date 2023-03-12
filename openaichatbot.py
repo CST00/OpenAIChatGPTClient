@@ -1,14 +1,30 @@
 import openai
-import tkinter as tk
 import PySimpleGUI as sg
 import json
-openai.api_key = '~API KEY HERE~'
+
+####
+openai.api_key = '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'
+####
+
+
+#           Variable Storage
 
 theme_list = sg.theme_list()
-#get the theme in storage]
+default_theme = 'GrayGrayGray'
 memlimit = 5
+totaltokens = 0
 config_file = "config.json"
 messagestorage = [{"role":"system","content":"You are a helpful assistant."}]
+
+#this function will be used to call the api and return the response
+def helper_api_call(messagestorage) :
+    try:
+        query = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messagestorage)
+    except Exception as e:
+        print('Error: ' + str(e))
+        query = None  
+    return query
+
 # Load the configuration file or create an empty dictionary if it does not exist
 try:
     with open(config_file, "r") as f:
@@ -17,27 +33,17 @@ except FileNotFoundError:
     config = {}
 
 # Get the stored PySimpleGUI theme or use the default theme
-default_theme = 'GrayGrayGray'
 selected_theme = config.get("theme", default_theme)
 sg.theme(selected_theme)
 
-def helper_api_call(messagestorage) :
-    #this function will be used to call the api and return the response
-    try:
-        query = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messagestorage)
-    except Exception as e:
-        print('Error: ' + str(e))
-        query = None  
-    return query
-   # messages=[{"role":"user","content":values['Input1']}]
 
+# GUI for the Top Left column - Currrently has the token counter and the memory limit
 tokens_column = [
     [sg.Text(text='Message Memory',pad=((10,50),(5,5)))],[sg.DropDown(values=[i for i in range(1,11)], readonly=True,enable_events=True ,size=(10, 1), key='memlim',default_value=memlimit,pad=((0,63),(20,20)))],
     [sg.Text(text="Tokens:", key="Tokens", auto_size_text=True, tooltip='This is the total number of tokens the last query cost', justification='left',pad=((0,100),(10,5)))],
     [sg.Text(text="Total Tokens:", auto_size_text=True, key="Total", tooltip='This is the total number of tokens for the session, 1000 tokens = .0006¢', justification='left',pad=((0,65),(10,5)))]
-    
 ]
-
+# GUI for the Top Right column - Currently has the model selector and the theme selector and the append to output box
 boxes_column = [
     [sg.Text(text="Select a model", key="Model", auto_size_text=True, tooltip='Set the mode of the GPT instructor, normal is chat bot mode and the other are self explanatory',
      justification='left',pad=((0,100),(5,5))),
@@ -48,59 +54,54 @@ boxes_column = [
     [sg.Text(text="Append to output", key="append", auto_size_text=True, tooltip='Whatever is typed in this box will be added to the end of your request',
      justification='center')],
     [sg.Multiline( font=('Helvetica', 10),justification='r', key="append",auto_size_text=True,pad=5)]
-
 ]
-
+# GUI for the bottom column - Currently has the output box and the input box
 input_output_column = [
     [sg.Multiline( font=('Sans Serif', 12), justification='right', key="output", expand_x=True, expand_y=True)],
     [sg.Text(text="Enter a message:"), sg.Input(font="italics", do_not_clear=False, key="Input1", expand_x=True),
      sg.Button(button_text="Send", bind_return_key=True)]
 ]
-#fill a list with every pysimplegui theme
-theme_list = sg.theme_list()
 
 layout = [
     [sg.Column(tokens_column,justification="left", element_justification="center",expand_x=True),
     sg.Column(boxes_column, justification="right",element_justification='center',expand_x=True)],
     [sg.Column(input_output_column,justification="c", element_justification="right",expand_x=True,expand_y=True)]
-    
-
 ]
 
 window = sg.Window('Chatbot', layout,finalize=True,resizable=True,)
 
-
+# set the minumum window size - things get weird if you make it too small
 width,height = window.get_screen_dimensions()
-width = int(width)
-height = int(height)
-width  = round(width)
-height = round(height)
-
-
 window.set_min_size((int(width/3),int(height/2)))
 
-totaltokens = 0
 while True:
     event, values = window.read()
-    output = ''
 
+    #if the message storage is greater than the memory limit remove the oldest message
     if len(messagestorage) > memlimit:
         messagestorage.pop(0)
-        #remove the first element of the message list
+    
+    #when the window is closed or the exit button is pressed
     if event == sg.WIN_CLOSED or event == 'Exit':
         sg.WINDOW_CLOSED
         break
+    #when the theme preview button is pressed call the built in theme previewer
     if event == 'Theme Preview':
         sg.theme_previewer()
+
+    #when the theme is changed in the drop down menu
     if event == 'Theme2':
         config['theme'] = values['Theme2']
         with open(config_file, "w") as f:
             json.dump(config, f)
+
+    #when the memory limit is changed
     if event == 'memlim':
         memlimit = values['memlim']
         if len(messagestorage) > memlimit:
             messagestorage = messagestorage[-memlimit:]
-        
+
+    #When you select a Instructor setting
     if event == 'Drop':
         messagestorage.clear
         if values['Drop']=='Teacher':
@@ -111,23 +112,23 @@ while True:
             messagestorage.append({"role": "system", "content": "You are a helpful assistant."})
 
 
-    
+    ### Where the actual chatbot stuff happens ###
 
-
+    #when the send button is pressed or enter is pressed
     if (event == 'Send' or event == '_Enter') and values['Input1'] != '':
         #take the value of the input box and print it to the output box
         window['output'].update('User: '+values['Input1']+'\n\n',append=True,text_color_for_value='#555555')  
         messagestorage.append({"role": "user", "content": values["Input1"]})
 
-        window.perform_long_operation(lambda :
-                              helper_api_call(messagestorage),
-                              '-END KEY-')
+        #pass the message to the helper function using the long operation function so the window doesnt freeze
+        window.perform_long_operation(lambda :helper_api_call(messagestorage),'-END KEY-')
         
 
-
+    #when the helper function is done running
     if (event == '-END KEY-'):
         query = values['-END KEY-']
         if query is not None:
+            messagestorage.append(query['choices'][0]['message'])
             output = str(query['choices'][0]['message']['content'])
 
             #replace the newlines
