@@ -8,7 +8,7 @@ Set How Many Messages Are Remembered
 
 Set Instructor(Chat, Business , Teacher)
 
-Append A Message(***Unimplimented***)
+Append A Message
 
 Set Theme
 
@@ -16,6 +16,6 @@ Set Theme
 ![Preview](ChatClientPreview.png)
 
 ### TODO
-Fix Append Line Function
+~~Fix Append Line Function~~
 
-Fix Multiline Formatting
+~~Fix Multiline Formatting~~
