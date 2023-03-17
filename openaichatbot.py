@@ -3,6 +3,7 @@ import PySimpleGUI as sg
 import json
 import time
 import keyboard
+import tkinter.font as font
 
 ####
 openai.api_key = ''
@@ -32,8 +33,8 @@ openai.api_key = config.get("api",'')
 #this function will be used to call the api and return the response
 def helper_api_call(messagestorage) :
     try:
-        query = openai.ChatCompletion.create(model="gpt-3.5-turbo", messages=messagestorage)
-       
+        query = openai.ChatCompletion.create(model="gpt-4", messages=messagestorage)
+        print(query)
     except Exception as e:
         window['output'].update('Error: ' + str(e) + 'Press F12 + Send if you need to reinsert api key',append=True,justification='l',text_color='red')
         query = None  
@@ -83,9 +84,16 @@ selected_theme = config.get("theme", default_theme)
 openai.api_key = config.get("api",'')
 sg.theme(selected_theme)
 bgcolorstart = sg.theme_button_color_background()
+theme_background_color = sg.theme_input_background_color()
+
 bgcolor = hex_to_rgb(bgcolorstart)
+theme_background_color = hex_to_rgb(theme_background_color)
+shader_int = -20
+divider_background_color = rgb_to_hex((theme_background_color[0]+shader_int,theme_background_color[1]+shader_int,theme_background_color[2]+shader_int))
+line_height = 2
 if bgcolorstart == '1234567890':
     bgcolorstart = 'black'
+
 
 #if bgcolor is dark set the text color to white and if it is light set the text color to black
 if bgcolor[0] < 128 and bgcolor[1] < 128 and bgcolor[2] < 128:
@@ -96,7 +104,8 @@ else:
 
 # GUI for the Top Left column - Currrently has the token counter and the memory limit
 tokens_column = [
-    [sg.Text(text='Message Memory',pad=((10,50),(5,5)))],[sg.DropDown(values=[i for i in range(1,11)], readonly=True,enable_events=True ,size=(10, 1),tooltip='This is how many previous messages will be sent with the current one so the bot can better understand the topic - more messages = better performance but cost more tokens.', key='memlim',default_value=memlimit,pad=((0,63),(20,20)))],
+    [sg.Text(text='Message Memory',pad=((10,50),(5,5)))],[sg.DropDown(values=[i for i in range(1,11)], readonly=True,enable_events=True ,size=(10, 1),tooltip='This is how many previous messages will be sent with the current one so the bot can better understand the topic - more messages = better performance but cost more tokens.',
+         key='memlim',default_value=memlimit,pad=((0,63),(20,20)))],
     [sg.Text(text="Tokens:", key="Tokens", auto_size_text=True, tooltip='This is the total number of tokens the last query cost', justification='left',pad=((0,100),(10,5)))],
     [sg.Text(text="Total Tokens:", auto_size_text=True, key="Total", tooltip='This is the total number of tokens for the session, 1000 tokens = .0006¢', justification='left',pad=((0,65),(10,5)))]
 ]
@@ -109,13 +118,14 @@ boxes_column = [
      sg.DropDown(theme_list,pad=((10,10),(20,20)),default_value=sg.theme(),key ='Theme2',readonly=True,size=20,enable_events=True),
      sg.Button(button_text='Theme Preview',auto_size_button=True)],
     [sg.Text(text="Append to output", key="appendt", auto_size_text=True, tooltip='Whatever is typed in this box will be added to the end of your request',
-     justification='center')],
+        justification='center')],
     [sg.Input( font=('Helvetica', 10),justification='l', key="append",pad=5,)]
 ]
 # GUI for the bottom column - Currently has the output box and the input box
 input_output_column = [
     [sg.Multiline( font=('Sans Serif', 12), justification='right', key="output", expand_x=True, expand_y=True)],
-    [sg.Text(text="Enter a message:"), sg.Multiline(font="italics", do_not_clear=False, key="Input1", expand_x=True,auto_size_text=True,no_scrollbar=True,enter_submits=True),
+    [sg.Multiline(font="italics",key="Input1", expand_x=True,
+       no_scrollbar=True,enter_submits=True,focus=True,size=(50,2),enable_events=True,pad=((5,0),(10,0))   ),
      sg.Button(button_text="Send", bind_return_key=True),sg.Text(text='',key='timer',visible=False)]
 ]
 
@@ -131,6 +141,7 @@ window = sg.Window('Chatbot', layout,finalize=True,resizable=True,)
 # set the minumum window size - things get weird if you make it too small
 width,height = window.get_screen_dimensions()
 window.set_min_size((int(width/3),int(height/2)))
+input_window_width = window['Input1'].Widget.winfo_width()
 
 while True:
     event, values = window.read()
@@ -169,6 +180,25 @@ while True:
         elif values['Instructor']=='Normal':
             messagestorage.append({"role": "system", "content": "You are a helpful assistant."})
 
+    #when the multiline is type in
+    elif event == 'Input1':
+        #access the multliline widget
+        len_of_inputtext =font.Font(family='italics', size=12).measure(values['Input1'])
+
+        if input_window_width != window['Input1'].Widget.winfo_width():
+            input_window_width = window['Input1'].Widget.winfo_width()
+        #print the width of the multiline widget
+        print(window['Input1'].get_size())
+        print(len_of_inputtext)
+        #if the length of the text is greater than the width of the multiline add lines limit to 10 lines
+        if len_of_inputtext > (input_window_width*line_height)-20 and line_height < 10:
+            line_height += 1
+            window['Input1'].Widget.config(height=line_height)
+        #if the length of the text is less than the width of the multiline add lines limit of 2 lines
+        elif len_of_inputtext < (input_window_width*(line_height-1)-20) and line_height > 2:
+            line_height -= 1
+            window['Input1'].Widget.config(height=line_height)
+
     #When you press f12 and activate another event to toggle the debug window
     elif  keyboard.is_pressed('F12') or (openai.api_key == '') or openai.api_key == None:
         #pop up the debug window
@@ -185,6 +215,8 @@ while True:
     elif (event == 'Send' or event == '_Enter') and values['Input1'] != '':
         #take the value of the input box and print it to the output box
         window['output'].update('User: '+values['Input1']+' '+values['append']+'\n\n',append=True)  
+        #clear the input box
+        window['Input1'].update('')
         messagestorage.append({"role": "user", "content": values["Input1"]+' '+values['append']})
 
         #pass the message to the helper function using the long operation function so the window doesnt freeze
@@ -193,7 +225,7 @@ while True:
         
 
     #when the helper function is done running
-    elif (event == '-END KEY-'):
+    if (event == '-END KEY-'):
         query = values['-END KEY-']
         window['timer'].update('',visible=False)
         
@@ -204,9 +236,10 @@ while True:
             #replace the newlines
             
              #write to the multiline box
-            window['output'].update('Bot: ',append=True,justification='l',text_color_for_value=textcolor,)
+            window['output'].update('Bot: ',append=True,justification='l',text_color_for_value=textcolor)
             window['output'].update(str(output)+'\n',append=True,justification='l')
-            window['output'].update('_'*50+'\n\n',justification='c',append=True,text_color_for_value=bgcolorstart)
+            window['output'].update('_'*50+'\n\n',justification='c',append=True,text_color_for_value=bgcolorstart,background_color_for_value=divider_background_color)
+            print(bgcolorstart)
             #set thet okens for last query and total query
             
             #hex code for very light gray
