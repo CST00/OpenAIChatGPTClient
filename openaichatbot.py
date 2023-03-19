@@ -4,6 +4,13 @@ import json
 import time
 import keyboard
 import tkinter.font as font
+#import pyi_splash
+
+
+#try:
+#    pyi_splash.close()
+#except:
+#    pass
 
 ####
 openai.api_key = ''
@@ -191,11 +198,14 @@ while True:
         print(window['Input1'].get_size())
         print(len_of_inputtext)
         #if the length of the text is greater than the width of the multiline add lines limit to 10 lines
-        if len_of_inputtext > (input_window_width*line_height)-20 and line_height < 10:
+        print(max(line_height//2,1))
+        if len_of_inputtext > (input_window_width*line_height)-25*max(line_height//2,1) and line_height < 10:
             line_height += 1
             window['Input1'].Widget.config(height=line_height)
+            print(window['Input1'].get_size())
+            print(len_of_inputtext)
         #if the length of the text is less than the width of the multiline add lines limit of 2 lines
-        elif len_of_inputtext < (input_window_width*(line_height-1)-20) and line_height > 2:
+        elif len_of_inputtext < (input_window_width*(line_height-1)-25*max(line_height//2,1)) and line_height > 2:
             line_height -= 1
             window['Input1'].Widget.config(height=line_height)
 
@@ -217,6 +227,8 @@ while True:
         window['output'].update('User: '+values['Input1']+' '+values['append']+'\n\n',append=True)  
         #clear the input box
         window['Input1'].update('')
+        window['Input1'].Widget.config(height=2)
+        line_height = 2                        
         messagestorage.append({"role": "user", "content": values["Input1"]+' '+values['append']})
 
         #pass the message to the helper function using the long operation function so the window doesnt freeze
