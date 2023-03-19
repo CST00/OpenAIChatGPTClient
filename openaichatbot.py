@@ -111,43 +111,58 @@ else:
 
 # GUI for the Top Left column - Currrently has the token counter and the memory limit
 tokens_column = [
-    [sg.Text(text='Message Memory',pad=((10,50),(5,5)))],[sg.DropDown(values=[i for i in range(1,11)], readonly=True,enable_events=True ,size=(10, 1),tooltip='This is how many previous messages will be sent with the current one so the bot can better understand the topic - more messages = better performance but cost more tokens.',
-         key='memlim',default_value=memlimit,pad=((0,63),(20,20)))],
-    [sg.Text(text="Tokens:", key="Tokens", auto_size_text=True, tooltip='This is the total number of tokens the last query cost', justification='left',pad=((0,100),(10,5)))],
-    [sg.Text(text="Total Tokens:", auto_size_text=True, key="Total", tooltip='This is the total number of tokens for the session, 1000 tokens = .0006¢', justification='left',pad=((0,65),(10,5)))]
+    [sg.Text(text="Tokens:", key="Tokens", auto_size_text=True, tooltip='This is the total number of tokens the last query cost', justification='left')],
+    [sg.Text(text="Total Tokens:", auto_size_text=True, key="Total", tooltip='This is the total number of tokens for the session, 1000 tokens = .0006¢', justification='left')]
 ]
-# GUI for the Top Right column - Currently has the model selector and the theme selector and the append to output box
+#Column for labels of the boxes
+labels_column = [
+    [sg.Push(),
+    sg.Text(text='Message\nMemory',pad=((40,15),(0,0))),
+    sg.Text(text="Instructor", key="Model", auto_size_text=True, tooltip='Set the mode of the GPT instructor, normal is chat bot mode, Teacher will explain things in depth and business should be more concise',
+     justification='left',pad=((15,15),(0,0))),
+    sg.Text(text="Theme", key="Theme", auto_size_text=True, tooltip='Set the theme of the window-this wont take affect till the next restart', justification='right',
+            pad=((40,20),(0,0))),
+    sg.Text(text = 'Model',key='model',auto_size_text=True,tooltip='This is the model that the bot will use to generate the response(Dall-E For images,Different GPT models)',pad=((50,0),(0,0))),
+    sg.Push(),
+    sg.Button(image_source='settings.png',key='settings',button_color=sg.theme_background_color(),border_width=0,tooltip='Settings',pad=((125,0),(0,0)))]
+    #sg.Text(text="Append to output", key="appendt", auto_size_text=True, tooltip='Whatever is typed in this box will be added to the end of your request',
+    #    justification='center')]
+]
+
+#GUI for the 
 boxes_column = [
-    [sg.Text(text="Select an Instructor", key="Model", auto_size_text=True, tooltip='Set the mode of the GPT instructor, normal is chat bot mode, Teacher will explain things in depth and business should be more concise',
-     justification='left',pad=((0,100),(5,5))),
-     sg.Text(text="Select a theme", key="Theme", auto_size_text=True, tooltip='Set the theme of the window-this wont take affect till the next restart', justification='right')],
-    [sg.Combo(['Normal','Business','Teacher'],default_value='Normal',key='Instructor',readonly=True,size=20,pad=((10,10),(20,20)),enable_events=True,tooltip='Set the mode of the GPT instructor, normal is chat bot mode, Teacher will explain things in depth and business should be more concise'),
-     sg.DropDown(theme_list,pad=((10,10),(20,20)),default_value=sg.theme(),key ='Theme2',readonly=True,size=20,enable_events=True),
-     sg.Button(button_text='Theme Preview',auto_size_button=True)],
-    [sg.Text(text="Append to output", key="appendt", auto_size_text=True, tooltip='Whatever is typed in this box will be added to the end of your request',
-        justification='center')],
-    [sg.Input( font=('Helvetica', 10),justification='l', key="append",pad=5,)]
+    [sg.DropDown(values=[i for i in range(1,11)], readonly=True,enable_events=True ,size=(5, 1),tooltip='This is how many previous messages will be sent with the current one so the bot can better understand the topic - more messages = better performance but cost more tokens.',
+         key='memlim',default_value=memlimit,pad=((0,15),(0,0))),
+    sg.DropDown(['Normal','Business','Teacher'],default_value='Normal',key='Instructor',readonly=True,enable_events=True,tooltip='Set the mode of the GPT instructor, normal is chat bot mode, Teacher will explain things in depth and business should be more concise',
+        pad=((15,15),(0,0))),
+    sg.Combo(theme_list,default_value=sg.theme(),key ='Theme2',readonly=True,size=10,enable_events=True,pad=((15,0),(0,0))),
+    sg.DropDown(['GPT3','GPT4','DALL-E','DAVINCI'],default_value='GPT3',readonly=True,enable_events=True,tooltip='This is the model that the bot will use to generate the response(Dall-E For images,Different GPT models)',pad=((15,0),(0,0)))]
+  #sg.Input( font=('Helvetica', 10),justification='l', key="append",pad=5,size=(20,1),tooltip='Whatever is typed in this box will be added to the end of your request')]
 ]
+
+
 # GUI for the bottom column - Currently has the output box and the input box
 input_output_column = [
     [sg.Multiline( font=('Sans Serif', 12), justification='right', key="output", expand_x=True, expand_y=True)],
     [sg.Multiline(font="italics",key="Input1", expand_x=True,
-       no_scrollbar=True,enter_submits=True,focus=True,size=(50,2),enable_events=True,pad=((5,0),(10,0))   ),
-     sg.Button(button_text="Send", bind_return_key=True),sg.Text(text='',key='timer',visible=False)]
+       no_scrollbar=True,enter_submits=True,focus=True,size=(50,2),enable_events=True,pad=((3,0),(5,0)),tooltip='Type your message here and press enter to send it to the bot'),
+     sg.Button(image_source='send.png',key='Send', bind_return_key=True,button_color=sg.theme_input_background_color(),border_width=0,pad=((0),(3,0)) ),sg.Text(text='',key='timer',visible=False)]
 ]
 
 
 layout = [
-    [sg.Column(tokens_column,justification="left", element_justification="center",expand_x=True),
-    sg.Column(boxes_column, justification="right",element_justification='center',expand_x=True)],
-    [sg.Column(input_output_column,justification="c", element_justification="right",expand_x=True,expand_y=True)]
+    [sg.Column(tokens_column,justification="left", element_justification="left",vertical_alignment='top',),
+    sg.Column(labels_column,justification="left", element_justification="center",vertical_alignment='top',expand_x=True)],
+    [sg.Column(boxes_column, justification="left",element_justification='center',expand_x=True,vertical_alignment='top')],
+    [sg.Column(input_output_column,justification="c", element_justification="right",expand_x=True,expand_y=True,)],
 ]
 
-window = sg.Window('Chatbot', layout,finalize=True,resizable=True,)
+
+window = sg.Window('Chatbot', layout,finalize=True,resizable=True)
 
 # set the minumum window size - things get weird if you make it too small
 width,height = window.get_screen_dimensions()
-window.set_min_size((int(width/3),int(height/2)))
+window.set_min_size((int(width/3)+70,int(height/2)))
 input_window_width = window['Input1'].Widget.winfo_width()
 
 while True:
@@ -224,12 +239,12 @@ while True:
     #when the send button is pressed or enter is pressed
     elif (event == 'Send' or event == '_Enter') and values['Input1'] != '':
         #take the value of the input box and print it to the output box
-        window['output'].update('User: '+values['Input1']+' '+values['append']+'\n\n',append=True)  
+        window['output'].update('User: '+values['Input1']+' '+'\n\n',append=True)  
         #clear the input box
         window['Input1'].update('')
         window['Input1'].Widget.config(height=2)
         line_height = 2                        
-        messagestorage.append({"role": "user", "content": values["Input1"]+' '+values['append']})
+        messagestorage.append({"role": "user", "content": values["Input1"]})
 
         #pass the message to the helper function using the long operation function so the window doesnt freeze
         window.perform_long_operation(lambda :helper_api_call(messagestorage),'-END KEY-')
